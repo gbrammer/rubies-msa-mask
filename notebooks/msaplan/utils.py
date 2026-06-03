@@ -179,7 +179,7 @@ def load_slit_transformation_coeffs():
     """
     from astropy.modeling.polynomial import Polynomial2D
 
-    tab = grizli.utils.read_catalog(data_path(file="all_grating_coeffs.2026.3.1.fits.gz"))
+    tab = grizli.utils.read_catalog(data_path(file="all_grating_coeffs.2026.3.1.fits"))
 
     all_coeffs = {}
     all_inv_coeffs = {}

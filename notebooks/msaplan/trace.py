@@ -43,7 +43,7 @@ class PrismTrace:
     def __init__(self):
 
         self.tab = utils.read_catalog(
-            plan_utils.data_path(file="slit_parameters_prism.fits.gz")
+            plan_utils.data_path(file="slit_parameters_prism.fits")
         )
 
         self.setup_coeffs()
@@ -442,7 +442,7 @@ class EmpiricalTrace:
         Build grating trace paths
         """
         self.slit_meta = utils.read_catalog(
-            plan_utils.data_path("slit_cutout_metadata_202504.fits.gz")
+            plan_utils.data_path("slit_cutout_metadata_202504.fits")
         )
 
         self.pad_size = pad_size

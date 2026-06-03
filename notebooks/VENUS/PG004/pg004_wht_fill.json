@@ -1,0 +1,510 @@
+{
+  "instrument" : "JWST/NIRSpec",
+  "name" : "pg004_wht_fill",
+  "aperturePA" : 203.0746,
+  "theta" : 90.0,
+  "catalog" : {
+    "name" : "pg004_v1_260529",
+    "primariesName" : "pg004_p0123",
+    "fillersName" : "pg004_v1_260529",
+    "primaries" : null,
+    "fillers" : null
+  },
+  "referencePointing" : {
+    "ra" : 289.27004166666666,
+    "dec" : -33.52560833333331
+  },
+  "configs" : [ {
+    "name" : "c1",
+    "version" : "PRDAPTSOC-073-003",
+    "info" : {
+      "fixedSlit" : null
+    },
+    "masterBackground" : false,
+    "slitlets" : [ {
+      "q" : 3,
+      "d" : 22,
+      "s" : 124,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 62,
+      "s" : 54,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 91,
+      "s" : 90,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 156,
+      "s" : 29,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 220,
+      "s" : 75,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 236,
+      "s" : 109,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 291,
+      "s" : 113,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 330,
+      "s" : 114,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 334,
+      "s" : 65,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 25,
+      "s" : 18,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 9,
+      "s" : 25,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 29,
+      "s" : 33,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 145,
+      "s" : 13,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 33,
+      "s" : 38,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 27,
+      "s" : 47,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 274,
+      "s" : 20,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 95,
+      "s" : 60,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 351,
+      "s" : 15,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 134,
+      "s" : 65,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 270,
+      "s" : 37,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 58,
+      "s" : 83,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 232,
+      "s" : 49,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 42,
+      "s" : 95,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 166,
+      "s" : 71,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 250,
+      "s" : 55,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 39,
+      "s" : 103,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 40,
+      "s" : 114,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 306,
+      "s" : 59,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 90,
+      "s" : 99,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 33,
+      "s" : 130,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 30,
+      "s" : 141,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 152,
+      "s" : 119,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 341,
+      "s" : 84,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 312,
+      "s" : 92,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 160,
+      "s" : 135,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 343,
+      "s" : 88,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 102,
+      "s" : 149,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 218,
+      "s" : 124,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 350,
+      "s" : 117,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 215,
+      "s" : 166,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 336,
+      "s" : 151,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 324,
+      "s" : 159,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 147,
+      "s" : 4,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 156,
+      "s" : 8,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 145,
+      "s" : 12,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 153,
+      "s" : 17,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 357,
+      "s" : 62,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 276,
+      "s" : 89,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 279,
+      "s" : 94,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 268,
+      "s" : 109,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 330,
+      "s" : 134,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 324,
+      "s" : 138,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 342,
+      "s" : 153,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 32,
+      "s" : 110,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 337,
+      "s" : 97,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 275,
+      "s" : 128,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 307,
+      "s" : 139,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 174,
+      "s" : 24,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 326,
+      "s" : 74,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 331,
+      "s" : 144,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 132,
+      "s" : 145,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 323,
+      "s" : 120,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 344,
+      "s" : 68,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 309,
+      "s" : 78,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 283,
+      "s" : 98,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 288,
+      "s" : 126,
+      "h" : 3
+    }, {
+      "q" : 4,
+      "d" : 330,
+      "s" : 149,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 221,
+      "s" : 24,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 15,
+      "s" : 77,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 348,
+      "s" : 30,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 348,
+      "s" : 134,
+      "h" : 3
+    }, {
+      "q" : 3,
+      "d" : 323,
+      "s" : 147,
+      "h" : 3
+    } ],
+    "exposures" : [ {
+      "name" : "c1e1",
+      "gratingFilter" : "PRISM_CLEAR",
+      "msaSlitlet" : "THREE_SHUTTER",
+      "ra" : 289.29972000000004,
+      "dec" : -33.5174777777778,
+      "sourceIds" : [ 191, 229, 423, 523, 569, 689, 942, 1037, 1139, 1280, 1371, 1372, 1540, 1611, 1627, 1657, 1734, 1830, 1836, 1895, 1977, 1992, 2003, 2182, 2312, 2361, 2401, 2643, 2660, 2681, 2690, 2990, 3064, 3219, 3237, 3268, 3299, 3315, 3557, 3561, 3595, 3597, 3598, 3716, 3725, 3726, 3994, 4216, 4392, 4476, 4567, 4641, 4766, 4840, 5779, 5834, 5845, 5962, 6077, 6376, 6408, 6432, 6444, 6499, 6615, 6697, 6841, 7233, 7287, 7345, 7624, 7666, 7841, 7944, 8072 ]
+    } ],
+    "primaryIds" : [ 942, 1037, 1992, 2643, 2690, 3219, 3299, 3716, 7233 ],
+    "fillerIds" : [ 191, 229, 423, 523, 569, 689, 1139, 1280, 1371, 1372, 1540, 1611, 1627, 1657, 1734, 1830, 1836, 1895, 1977, 2003, 2182, 2312, 2361, 2401, 2681, 2990, 3064, 3237, 3268, 3557, 3561, 3595, 3597, 3598, 3726, 3994, 4216, 4392, 4476, 4567, 4641, 4766, 4840, 5779, 5834, 5845, 5962, 6077, 6376, 6408, 6432, 6444, 6499, 6615, 6697, 6841, 7287, 7345, 7624, 7666, 7841, 7944, 8072 ]
+  } ],
+  "stats" : [ {
+    "name" : "s0",
+    "score" : 75.0,
+    "numberOfConfigurations" : 1,
+    "numberOfTargets" : 75,
+    "duration" : 5.336,
+    "totalDuration" : 5.336
+  } ],
+  "errors" : [ ],
+  "plannerSpecification" : {
+    "gratingSpecification" : {
+      "gratings" : [ "PRISM_CLEAR" ],
+      "allowContamination" : false,
+      "multiplexLimit" : null,
+      "multiplexingMinimum" : 181
+    },
+    "theta" : null,
+    "candidates" : {
+      "fillers" : "pg004_v1_260529",
+      "primaries" : "pg004_p0123",
+      "catalog" : "pg004_v1_260529",
+      "slitSources" : null
+    },
+    "planAngle" : 203.0746,
+    "planName" : "pg004_wht_fill",
+    "slitSpecification" : {
+      "sweetSpot" : "PERCENT_0",
+      "slitlet" : "THREE_SHUTTER"
+    },
+    "searchParameters" : {
+      "useWeights" : true,
+      "enableMonteCarlo" : false,
+      "monteCarloShuffles" : 10,
+      "ignoreStuckOpen" : false,
+      "numberOfConfigurations" : 1,
+      "spectralOverlapThreshold" : 1.5,
+      "allowMultiSourceShutters" : false,
+      "spectralOverlapShutterOffsetMap" : "JWST_NIRSPEC_PRISM"
+    },
+    "pointingSpecification" : {
+      "ditherType" : "NONE",
+      "shouldNod" : false,
+      "fixedPointings" : [ ],
+      "numberOfNods" : 3,
+      "fixedDitherOffsets" : [ {
+        "spatial" : 0,
+        "dispersion" : 0
+      } ],
+      "pointingMode" : "GRID_SEARCH",
+      "partiallyCompletedPrimaries" : false,
+      "minPrimaryDitherPoints" : null,
+      "partiallyCompletedFillers" : false,
+      "minFillerDitherPoints" : null
+    },
+    "searchGridSpecification" : {
+      "searchArea" : {
+        "width" : 0.004,
+        "height" : 0.004,
+        "corners" : [ {
+          "ra" : 289.2997193336405,
+          "dec" : -33.51747833333337
+        }, {
+          "ra" : 289.2997206663595,
+          "dec" : -33.517477222222226
+        }, {
+          "ra" : 289.2997193336405,
+          "dec" : -33.517477222222226
+        }, {
+          "ra" : 289.2997206663595,
+          "dec" : -33.51747833333337
+        } ],
+        "center" : {
+          "x" : 1041478.9920000001,
+          "y" : -120662.92000000007
+        },
+        "xlength" : 0.004,
+        "ylength" : 0.004,
+        "offsetToBottomCorner" : {
+          "x" : -0.002,
+          "y" : -0.002
+        }
+      },
+      "searchStepSize" : 0.002,
+      "searchAreaCenter" : {
+        "ra" : 289.29972000000004,
+        "dec" : -33.5174777777778
+      },
+      "searchAreaHeight" : 0.001,
+      "searchAreaWidth" : 0.001
+    },
+    "maskingSpecification" : {
+      "primaryMask" : null,
+      "fillerMask" : null,
+      "noGapFiller" : false,
+      "noGapPrimary" : true,
+      "noRedCutoffPrimary" : true,
+      "noBlueCutoffPrimary" : true,
+      "noRedCutoffFiller" : false,
+      "noBlueCutoffFiller" : false
+    },
+    "slitSearchSpecification" : null,
+    "wavelengthRangeSpecification" : {
+      "primaryRange1" : false,
+      "primaryRange2" : false,
+      "primaryRange3" : false,
+      "primaryRange4" : false,
+      "primaryRange5" : false,
+      "fillerRange1" : false,
+      "fillerRange2" : false,
+      "fillerRange3" : false,
+      "fillerRange4" : false,
+      "fillerRange5" : false
+    }
+  }
+}
