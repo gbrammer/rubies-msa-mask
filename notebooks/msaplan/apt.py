@@ -17,7 +17,7 @@ from .utils import PRIORITY_COLOR
 
 def make_apt_shutter_csv(shutter_table, slitlet=[2,1,0], name='test'):
 
-    with open('all_closed.csv') as fp:
+    with open(plan_utils.data_path('all_closed.csv')) as fp:
         lines = fp.readlines()[1:]
 
     data = np.array([np.cast[int](line.strip().split(',')) for line in lines])
