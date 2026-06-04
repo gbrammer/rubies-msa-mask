@@ -62,6 +62,7 @@ def show_msa_layout(
     legend=True,
     ascale=1.0,
     add_labels=True,
+    show_footprints=["all", "g395m", "prism"],
     label_kwargs={"alpha": 1.0, "color": "0.5", "zorder": 101, "fontsize": 7},
     **kwargs,
 ):
@@ -87,14 +88,13 @@ def show_msa_layout(
     sfoot = shutter_mask_footprint()
 
     for k, label in enumerate(sfoot):
-
         for q in sfoot[label]:
             sr = sfoot[label][q]
             if siaf_aper is not None:
                 rd = siaf_aper.tel_to_sky(*sr.xy[0].T)
                 sr = grizli.utils.SRegion(np.array(rd))
 
-            if (k == 0) & (add_labels):
+            if (k == 0) & (add_labels) & (label in show_footprints):
                 ax.text(
                     *sr.centroid[0],
                     f"Q{q}",
@@ -105,7 +105,7 @@ def show_msa_layout(
 
             ax.plot(*sr.xy[0].T, alpha=0)
 
-            if 1:
+            if (label in show_footprints):
                 sr.add_patch_to_axis(
                     ax,
                     ec=ec[k],
@@ -301,296 +301,3 @@ def msa_quadrant_footprint(plan_file='uds_obs4a_prism.json', ax=None, patch_kwar
             
     return plan, corners
 
-class MSATA(object):
-
-    MSATA_MAG_LIMITS_MD = """
-**Table 1.** Brightness ranges for NIRSpec MSATA filter and readout pattern options
-
-|  Readout |  F110W  |  F140X  | CLEAR |  F110W_ | F140X_ | CLEAR_|
-|:---------|:-------:|:-------:|:-----:|:-------:|:------:|:-----:|
-|           |        |*S/N=20* |       |         | *Sat.* |       |
-| NRSRAPID  | 22.0   | 23.0    | 23.8  | 19.5    | 20.6   | 21.3  |
-| NRSRAPID1 |        |         | 24.5  |         |        | 21.9  |
-| NRSRAPID2 |        |         | 24.9  |         |        | 22.9  |
-| NRSRAPID6 | 24.0   | 25.0    | 25.7  | 21.3    | 22.3   | 23.1  |
-    """
-
-    THUMB_TEMPLATE = (
-        "https://grizli-cutout.herokuapp.com/thumb?size=2.54&scl={scl:.1f}"
-        "&default_filters=jwst&coords={ra:.6f},{dec:.6f}"
-        "&asinh={asinh}&slit={ra:.6f},{dec:.6f},0.0,3.2,3.2"
-    )
-
-    def __init__(self, nrs=None, columns={}, **kwargs):
-        """
-        https://jwst-docs.stsci.edu/jwst-near-infrared-spectrograph/nirspec-observing-strategies/nirspec-msata-reference-star-selection-recommended-strategies#NIRSpecMSATAReferenceStarSelectionRecommendedStrategies-NIRSpecmagnitudes&gsc.tab=0
-        """
-        self.read_table_()
-        
-        self.nrs = nrs
-
-        self.columns = columns
-        self.parse_column_names()
-
-    def parse_column_names(self):
-        """
-        """
-        if not hasattr(self.nrs, "colnames"):
-            return False
-
-        cnames = {
-            "id": ["ID"],
-            "ra": ["RA"],
-            "dec": ["Dec"],
-            "mag": [
-                "NRS_F110W", "NRS_F140X", "NRS_CLEAR", "Magnitude",
-                "f115w_tot_1",
-            ],
-            "size": ["R50", "flux_radius", "size"],
-            "ref": ["Reference", "is_star"],
-        }
-        
-        for k in cnames:
-            if k in self.columns:
-                if self.columns[k] is not None:
-                    continue
-
-            self.columns[k] = None
-
-            for c in cnames[k]:
-                for func in [str.title, str.upper, str.lower]:
-                    if func(c) in self.nrs.colnames:
-                        self.columns[k] = func(c)
-                        break
-                
-                if self.columns[k] is not None:
-                    break
-
-            if self.columns[k] is None:
-                raise ValueError(f"No {k} in {cnames[k]} column found")
-
-            if (k == "mag") & (self.columns[k] == "f115w_tot_1"):
-                self.nrs["NRS_F110W"] = (
-                    23.9 - 2.5 * np.log10(self.nrs["f115w_tot_1"])
-                )
-                self.columns["mag"] = "NRS_F110W"
-
-    def jdocs_ranges(self):
-        """
-        Render markdown in Jupyter
-        """
-        from IPython.display import Markdown
-        return Markdown(self.MSATA_MAG_LIMITS_MD)
-        
-    def read_table_(self):
-        """
-        Read markdown into a table
-        """
-
-        self.table = grizli.utils.GTable.read(
-            self.MSATA_MAG_LIMITS_MD.strip(),
-            format="ascii",
-            delimiter="|",
-            data_start=4,
-            header_start=1
-        )
-
-        self.table = self.table[self.table.colnames[1:-1]]
-
-        # Fill values in missing Readout / filter
-        for c in ["F110W", "F140X"]:
-            fill = self.table[c].mask & True
-            dmag = np.mean((self.table[c] - self.table["CLEAR"])[~fill])
-            self.table[c][fill] = (self.table["CLEAR"] + dmag)[fill]
-            self.table[c + "_"][fill] = (self.table["CLEAR_"] + dmag)[fill]
-
-    def select_mag_ranges(self, verbose=False):
-        """
-        """
-        is_ref = self.nrs[self.columns["ref"]] > 0
-
-        nrs_f110w = self.nrs[self.columns["mag"]]
-
-        selection = {}
-
-        if verbose:
-            print(f"{'mode':^15} {'full':>7} {'& ref':>7}")
-            print(f"{'-'*15:^15} {'-'*5:>7} {'-'*5:>7}")
-
-        for i, row in enumerate(self.table):
-            for j, c in enumerate("F110W F140X CLEAR".split()):
-                in_range = (nrs_f110w < row[c]) & (nrs_f110w > row[c + "_"])
-                key = f"{row['Readout']}_{c}".lower()
-                
-                if verbose:
-                    print(
-                        f"{key:>15} "
-                        f"{in_range.sum():>7} {(in_range & is_ref).sum():>7}"
-                    )
-                
-                selection[key] = in_range & is_ref
-        
-        return selection
-
-    def select_sources(self, mode="nrsrapid_f110w", scl=2.0, asinh=False, nper=10, page=0, output="display", verbose=True, **kwargs):
-        """
-        """
-        from IPython.display import display, Markdown
-
-        cols = [self.columns[k] for k in ["id", "ra", "dec", "mag", "size"]]
-        sub = self.nrs[cols][self.select_mag_ranges(verbose=False)[mode]]
-
-        sl = slice(page * nper, (page + 1) * nper)
-        if verbose:
-            print(
-                f"{mode}  [{sl.start}:{sl.stop}] {len(sub)} "
-                + f"(page {page}/{len(sub)//nper})"
-            )
-
-        so = np.argsort(sub[self.columns["mag"]])[sl]
-        sub = sub[so]
-
-        sub[self.columns["mag"]].format = ".2f"
-        sub[self.columns["size"]].format = ".1f"
-        sub[self.columns["ra"]].format = ".6f"
-        sub[self.columns["dec"]].format = ".6f"
-
-        sub["Thumb_3.2"] = [
-            "<img src=\""
-            + self.THUMB_TEMPLATE.format(
-                ra=row[self.columns["ra"]], dec=row[self.columns["dec"]],
-                scl=scl, asinh=asinh,
-            )
-            + "\" width=200>"
-            for row in sub
-        ]
-
-        if output == "display":
-            df = sub.to_pandas()
-            return display(Markdown(df.to_markdown()))
-        else:
-            return sub
-
-    def plot_histogram(self, **kwargs):
-        """
-        Make a figure
-        """
-        nrs = self.nrs
-
-        is_ref = nrs[self.columns["ref"]] > 0
-
-        nrs_f110w = nrs[self.columns["mag"]][is_ref]
-
-        fig, ax = plt.subplots(1, 1, figsize=(9,6))
-
-        # R50 / flux_radius
-        ax2 = ax.twinx()
-
-        ax2.scatter(
-            nrs_f110w,
-            nrs[self.columns["size"]][is_ref],
-            alpha=0.2,
-            color="0.3",
-        )
-        ax2.set_ylim(0, 9.9)
-
-        size_label = self.columns["size"] + ""
-        if size_label == "R50":
-            size_label = r"$R_{50}$ [pix]"
-        elif size_label == "flux_radius":
-            size_label = "flux_radius [pix]"
-
-        ax2.set_ylabel(size_label)
-
-        # Histogram
-        _ = ax.hist(
-            nrs_f110w,
-            bins=np.arange(19.25, 26.01, 0.25),
-            color="0.5", alpha=0.5
-        )
-
-        ymax = ax.get_ylim()[1] * 1.7
-        ax.set_ylim(0, ymax)
-
-        dy = 0.1
-        y0 = 1.0 - dy * 4.5
-        fs = 7
-        yw = 1.0 / 4
-
-        tkwargs = {
-            "fontsize": 7,
-            "zorder": 10,
-            "color": "w",
-            "weight": "bold",
-        }
-
-        for i, row in enumerate(self.table):
-            c_i = plt.cm.Spectral(i / 3.)
-            yj = y0 + i * dy
-            for j, c in enumerate("F110W F140X CLEAR".split()):
-                yj += dy / 3.
-
-                in_range = (nrs_f110w < row[c]) & (nrs_f110w > row[c + "_"])
-                n_j = in_range.sum()
-
-                ty = (yj + (0.5 * yw - 0.015) * dy) * ymax
-
-                # Count
-                ax.text(
-                    row[c + "_"] + 0.05,
-                    ty,
-                    f"{n_j}",
-                    ha="left", va="center", **tkwargs
-                )
-                
-                # Filter
-                ax.text(
-                    row[c] - 0.05,
-                    ty, c, ha="right", va="center", **tkwargs
-                )
-
-                # Readout
-                if j == 1:
-                    ax.text(
-                        np.mean([row[c], row[c + "_"]]),
-                        ty,
-                        row["Readout"],
-                        ha="center",
-                        va="center",
-                        **tkwargs
-                    )
-
-                ax.fill_between(
-                    [row[c], row[c + "_"]],
-                    np.ones(2) * yj * ymax,
-                    np.ones(2) * (yj + 1. / 4 * dy) * ymax,
-                    alpha=0.95,
-                    color=c_i,
-                    zorder=tkwargs["zorder"] - 1,
-                )
-
-        # Total
-        ax.text(
-            0.5, 0.05,
-            "".join([
-                f"'{self.columns['ref']}': ",
-                r"$N_\mathrm{tot}$ = ",
-                f"{is_ref.sum()}"
-            ]),
-            ha="center",
-            va="bottom",
-            transform=ax.transAxes,
-            fontsize=tkwargs["fontsize"] * 1.3,
-            weight=tkwargs["weight"],
-            color="k",
-        )
-
-        ax.grid(zorder=tkwargs["zorder"] - 5)
-
-        _ = ax.set_xlabel(f"{self.columns['mag']} [mag]")
-        _ = ax.set_ylabel(r"$N$ / 0.25 mag")
-
-        fig.tight_layout(pad=1)
-
-        return fig
-    

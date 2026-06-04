@@ -472,6 +472,8 @@ class Planner:
             shut = self.cat["ID", "ix", "RA", "Dec", "Priority", "Weight"]
 
         ap = self.mplan.get_aperture(offset_coo, with_va=True)
+        self.offset_ap = ap
+
         v2, v3 = ap.sky_to_tel(shut["RA"], shut["Dec"])
 
         shut["quad"] = 0
@@ -805,6 +807,7 @@ class MSAPointingOptimizer:
             v3_offset = v3o - self.msa_ref_v3
 
             targ_offset = self.targ_v2v3 + np.array([-v2_offset, -v3_offset])
+
         else:
             # shut = self.cat['ID','ix','RA','Dec','Priority','Weight']
             ap = self.mplan.get_aperture(offset_coo, with_va=True)
@@ -1290,4 +1293,398 @@ def optimize_pointing(opt, disp_offset=0.0, spat_offset=0.0, large_start=2, opti
     }
 
     return result
-    
+
+
+class MSATA(object):
+
+    MSATA_MAG_LIMITS_MD = """
+**Table 1.** Brightness ranges for NIRSpec MSATA filter and readout pattern options
+
+|  Readout |  F110W  |  F140X  | CLEAR |  F110W_ | F140X_ | CLEAR_|
+|:---------|:-------:|:-------:|:-----:|:-------:|:------:|:-----:|
+|           |        |*S/N=20* |       |         | *Sat.* |       |
+| NRSRAPID  | 22.0   | 23.0    | 23.8  | 19.5    | 20.6   | 21.3  |
+| NRSRAPID1 |        |         | 24.5  |         |        | 21.9  |
+| NRSRAPID2 |        |         | 24.9  |         |        | 22.9  |
+| NRSRAPID6 | 24.0   | 25.0    | 25.7  | 21.3    | 22.3   | 23.1  |
+    """
+
+    THUMB_TEMPLATE = (
+        "https://grizli-cutout.herokuapp.com/thumb?size=2.54&scl={scl:.1f}"
+        "&default_filters=jwst&coords={ra:.6f},{dec:.6f}"
+        "&asinh={asinh}&slit={ra:.6f},{dec:.6f},0.0,3.2,3.2"
+    )
+
+    def __init__(self, nrs=None, columns={}, **kwargs):
+        """
+        https://jwst-docs.stsci.edu/jwst-near-infrared-spectrograph/nirspec-observing-strategies/nirspec-msata-reference-star-selection-recommended-strategies#NIRSpecMSATAReferenceStarSelectionRecommendedStrategies-NIRSpecmagnitudes&gsc.tab=0
+        """
+        self.read_table_()
+        
+        self.nrs = nrs
+
+        self.columns = columns
+        self.parse_column_names()
+
+        if ("mplan" in kwargs) & ("smask" in kwargs):
+            self.set_optimizer(**kwargs)
+        else:
+            self.opt = None
+
+    def parse_column_names(self):
+        """
+        """
+        if not hasattr(self.nrs, "colnames"):
+            return False
+
+        cnames = {
+            "id": ["ID"],
+            "ra": ["RA"],
+            "dec": ["Dec"],
+            "mag": [
+                "NRS_F110W", "NRS_F140X", "NRS_CLEAR", "Magnitude",
+                "f115w_tot_1",
+            ],
+            "size": ["R50", "flux_radius", "size"],
+            "ref": ["Reference", "is_star"],
+        }
+        
+        for k in cnames:
+            if k in self.columns:
+                if self.columns[k] is not None:
+                    continue
+
+            self.columns[k] = None
+
+            for c in cnames[k]:
+                for func in [str.title, str.upper, str.lower]:
+                    if func(c) in self.nrs.colnames:
+                        self.columns[k] = func(c)
+                        break
+                
+                if self.columns[k] is not None:
+                    break
+
+            if self.columns[k] is None:
+                raise ValueError(f"No {k} in {cnames[k]} column found")
+
+            if (k == "mag") & (self.columns[k] == "f115w_tot_1"):
+                self.nrs["NRS_F110W"] = (
+                    23.9 - 2.5 * np.log10(self.nrs["f115w_tot_1"])
+                )
+                self.columns["mag"] = "NRS_F110W"
+
+    def set_optimizer(self, mplan=None, smask=None, valid_key="all", **kwargs):
+        """
+        """
+        if (mplan is None) | (smask is None):
+            self.opt = None
+            return None
+
+        self.opt = MSAPointingOptimizer(
+            mplan=mplan,
+            source_table=self.nrs,
+            smask=smask,
+            valid_key=valid_key,
+            oversample_shutters=5,
+            weight_column="Weight"
+        )
+        
+    def jdocs_ranges(self):
+        """
+        Render markdown in Jupyter
+        """
+        from IPython.display import Markdown
+        return Markdown(self.MSATA_MAG_LIMITS_MD)
+        
+    def read_table_(self):
+        """
+        Read markdown into a table
+        """
+
+        self.table = utils.GTable.read(
+            self.MSATA_MAG_LIMITS_MD.strip(),
+            format="ascii",
+            delimiter="|",
+            data_start=4,
+            header_start=1
+        )
+
+        self.table = self.table[self.table.colnames[1:-1]]
+
+        # Fill values in missing Readout / filter
+        for c in ["F110W", "F140X"]:
+            fill = self.table[c].mask & True
+            dmag = np.mean((self.table[c] - self.table["CLEAR"])[~fill])
+            self.table[c][fill] = (self.table["CLEAR"] + dmag)[fill]
+            self.table[c + "_"][fill] = (self.table["CLEAR_"] + dmag)[fill]
+
+    def select_mag_ranges(self, selection=None, verbose=False):
+        """
+        """
+        if selection is None:
+            is_ref = self.nrs[self.columns["ref"]] > 0
+        else:
+            is_ref = selection & True
+
+        nrs_f110w = self.nrs[self.columns["mag"]]
+
+        selection = {}
+
+        if verbose:
+            print(f"{'mode':^15} {'full':>7} {'& ref':>7}")
+            print(f"{'-'*15:^15} {'-'*5:>7} {'-'*5:>7}")
+
+        for i, row in enumerate(self.table):
+            for j, c in enumerate("F110W F140X CLEAR".split()):
+                in_range = (nrs_f110w < row[c]) & (nrs_f110w > row[c + "_"])
+                key = f"{row['Readout']}_{c}".lower()
+                
+                if verbose:
+                    print(
+                        f"{key:>15} "
+                        f"{in_range.sum():>7} {(in_range & is_ref).sum():>7}"
+                    )
+                
+                selection[key] = in_range & is_ref
+        
+        return selection
+
+    def select_sources(self, mode="nrsrapid_f110w", scl=1.0, asinh=True, nper=20, page=0, output="display", selection=None, verbose=True, **kwargs):
+        """
+        """
+        from IPython.display import display, Markdown
+
+        cols = [self.columns[k] for k in ["id", "ra", "dec", "mag", "size"]]
+        sub = self.nrs[cols][
+            self.select_mag_ranges(selection=selection, verbose=False)[mode]
+        ]
+
+        sl = slice(page * nper, (page + 1) * nper)
+        if verbose:
+            print(
+                f"{mode}  [{sl.start}:{sl.stop}] Ntot={len(sub)} "
+                + f"(page {page}/{len(sub)//nper})"
+            )
+
+        so = np.argsort(sub[self.columns["mag"]])[sl]
+        sub = sub[so]
+
+        sub[self.columns["mag"]].format = ".2f"
+        sub[self.columns["size"]].format = ".1f"
+        sub[self.columns["ra"]].format = ".6f"
+        sub[self.columns["dec"]].format = ".6f"
+
+        sub["Thumb_3.2"] = [
+            "<img src=\""
+            + self.THUMB_TEMPLATE.format(
+                ra=row[self.columns["ra"]], dec=row[self.columns["dec"]],
+                scl=scl, asinh=asinh,
+            )
+            + "\" width=200>"
+            for row in sub
+        ]
+
+        if output == "display":
+            df = sub.to_pandas()
+            return display(Markdown(df.to_markdown()))
+        else:
+            return sub
+
+    def plot_histogram(self, selection=None, **kwargs):
+        """
+        Make a figure
+        """
+        nrs = self.nrs
+
+        if selection is None:
+            is_ref = self.nrs[self.columns["ref"]] > 0
+        else:
+            is_ref = selection & True
+
+        nrs_f110w = nrs[self.columns["mag"]][is_ref]
+
+        fig, ax = plt.subplots(1, 1, figsize=(9,6))
+
+        # R50 / flux_radius
+        ax2 = ax.twinx()
+
+        ax2.scatter(
+            nrs_f110w,
+            nrs[self.columns["size"]][is_ref],
+            alpha=0.2,
+            color="0.3",
+        )
+        ax2.set_ylim(0, 9.9)
+
+        size_label = self.columns["size"] + ""
+        if size_label == "R50":
+            size_label = r"$R_{50}$ [pix]"
+        elif size_label == "flux_radius":
+            size_label = "flux_radius [pix]"
+
+        ax2.set_ylabel(size_label)
+
+        # Histogram
+        _ = ax.hist(
+            nrs_f110w,
+            bins=np.arange(19.25, 26.01, 0.25),
+            color="0.5", alpha=0.5
+        )
+
+        ymax = ax.get_ylim()[1] * 1.7
+        ax.set_ylim(0, ymax)
+
+        dy = 0.1
+        y0 = 1.0 - dy * 4.5
+        fs = 7
+        yw = 1.0 / 4
+
+        tkwargs = {
+            "fontsize": 7,
+            "zorder": 10,
+            "color": "w",
+            "weight": "bold",
+        }
+
+        for i, row in enumerate(self.table):
+            c_i = plt.cm.Spectral(i / 3.)
+            yj = y0 + i * dy
+            for j, c in enumerate("F110W F140X CLEAR".split()):
+                yj += dy / 3.
+
+                in_range = (nrs_f110w < row[c]) & (nrs_f110w > row[c + "_"])
+                n_j = in_range.sum()
+
+                ty = (yj + (0.5 * yw - 0.015) * dy) * ymax
+
+                # Count
+                ax.text(
+                    row[c + "_"] + 0.05,
+                    ty,
+                    f"{n_j}",
+                    ha="left", va="center", **tkwargs
+                )
+                
+                # Filter
+                ax.text(
+                    row[c] - 0.05,
+                    ty, c, ha="right", va="center", **tkwargs
+                )
+
+                # Readout
+                if j == 1:
+                    ax.text(
+                        np.mean([row[c], row[c + "_"]]),
+                        ty,
+                        row["Readout"],
+                        ha="center",
+                        va="center",
+                        **tkwargs
+                    )
+
+                ax.fill_between(
+                    [row[c], row[c + "_"]],
+                    np.ones(2) * yj * ymax,
+                    np.ones(2) * (yj + 1. / 4 * dy) * ymax,
+                    alpha=0.95,
+                    color=c_i,
+                    zorder=tkwargs["zorder"] - 1,
+                )
+
+        # Total
+        ax.text(
+            0.5, 0.05,
+            "".join([
+                f"'{self.columns['ref']}': ",
+                r"$N_\mathrm{tot}$ = ",
+                f"{is_ref.sum()}"
+            ]),
+            ha="center",
+            va="bottom",
+            transform=ax.transAxes,
+            fontsize=tkwargs["fontsize"] * 1.3,
+            weight=tkwargs["weight"],
+            color="k",
+        )
+
+        ax.grid(zorder=tkwargs["zorder"] - 5)
+
+        _ = ax.set_xlabel(f"{self.columns['mag']} [mag]")
+        _ = ax.set_ylabel(r"$N$ / 0.25 mag")
+
+        fig.tight_layout(pad=1)
+
+        return fig
+
+    def check_pointing(self, disp_offset=0.0, spat_offset=0.0, **kwargs):
+        """
+        """
+        result = self.opt.evaluate_offset(
+            disp_offset=disp_offset,
+            spat_offset=spat_offset,
+            simple=False,
+            tol=0.11
+        )
+
+        plot_kwargs = {
+            "siaf_aper": self.opt.offset_ap,
+            "show_footprints": "all",
+            "legend": False,
+        }
+
+        fig = plan_utils.show_msa_layout(**plot_kwargs)
+        ax = fig.axes[0]
+
+        any_ref = self.nrs["Reference"] > 0
+
+        tests = {}
+        for i in range(0,4):
+            ref_i = f"Reference{i}" if i > 0 else "Reference"
+            if ref_i in self.nrs.colnames:
+                tests[ref_i] = self.nrs[ref_i] > 0
+                any_ref |= tests[ref_i]
+
+                c_i = plt.cm.rainbow_r(i / 3.)
+                in_msa_i = tests[ref_i] & result["in_msa"]
+                not_in_msa_i = tests[ref_i] & ~result["in_msa"]
+
+                ax.scatter(
+                    self.nrs["RA"][in_msa_i],
+                    self.nrs["Dec"][in_msa_i],
+                    alpha=0.7, # - 0.1*i,
+                    zorder=500 - i,
+                    color=c_i,
+                    marker="o",
+                    s=40,
+                    label=f"{ref_i} {in_msa_i.sum()}"
+                )
+
+                ax.scatter(
+                    self.nrs["RA"][not_in_msa_i],
+                    self.nrs["Dec"][not_in_msa_i],
+                    alpha=(0.6 - 0.1*i) * 0.3,
+                    zorder=500 - i,
+                    fc="None",
+                    ec=c_i
+                )
+
+        any_ref &= result["in_msa"]
+
+        ax.text(
+            0.03, 0.97,
+            f"dx={disp_offset:.2f}  dy={spat_offset:.2f}".replace(
+                "d", r"$\Delta$"
+            ),
+            ha="left", va="top",
+            fontsize=7,
+            transform=ax.transAxes
+        )
+
+        ax.legend(fontsize=7)
+
+        result["fig"] = fig
+        result["ref"] = tests
+        result["any_ref"] = any_ref
+
+        return result
