@@ -445,6 +445,15 @@ class EmpiricalTrace:
             plan_utils.data_path("slit_cutout_metadata_202504.fits")
         )
 
+        test = np.isin(
+            self.slit_meta["grating"].data.astype(str),
+            ["PRISM", "G395M", "G235M"]
+        )
+        test &= self.slit_meta["detector"] == "NRS1"
+        test &= np.isin(self.slit_meta["quadrant"], [1,2])
+        test &= self.slit_meta["xcen"] < 60
+        self.slit_meta = self.slit_meta[~test]
+
         self.pad_size = pad_size
         self.default_pad = default_pad
         self.stuck_open_pad = stuck_open_pad
@@ -482,9 +491,10 @@ class EmpiricalTrace:
             test = self.slit_meta["grating"] == self.grating
             test &= self.slit_meta["filter"] == self.filter
             test &= self.slit_meta["detector"] == det
-            test &= self.slit_meta["x_max"] - self.slit_meta["x_min"] > 16
+            test &= (self.slit_meta["x_max"] - self.slit_meta["x_min"]) > 4
 
             sub_meta = self.slit_meta[test]
+            # print("xxx", det, test.sum())
 
             qs = utils.Unique(sub_meta["quadrant"], verbose=False)
             qx = utils.Unique(
@@ -525,7 +535,7 @@ class EmpiricalTrace:
                         coo, sub_meta[p][qsi], fill_value=np.nan
                     )
                     value_ = interp(*cx)
-                    valid_ = np.isfinite(value_)
+                    valid_ = np.isfinite(value_) # | True
                     self.stab.shutter_table[p][qxi[valid_]] = value_[valid_]
                     self.stab.shutter_table[p + suffix][qxi[valid_]] = value_[valid_]
                     self.stab.smask.stuck_open_table[p][qoi] = interp(*co)
@@ -537,7 +547,11 @@ class EmpiricalTrace:
             miss = ~np.isfinite(self.stab.shutter_table["x_min"])
             miss |= (
                 self.stab.shutter_table["x_max"] - self.stab.shutter_table["x_min"]
-            ) < 3
+            ) < 4
+
+            for p in ["wave_min", "wave_max", "x_min", "x_max"]:
+                self.stab.shutter_table[p][miss] = np.nan
+                self.stab.shutter_table[p + suffix][miss] = np.nan
 
             for j in np.where(~miss)[0]:
                 row = self.stab.shutter_table[j]
